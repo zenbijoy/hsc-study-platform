@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+
 import fitz  # PyMuPDF
+
 from app.models import ChapterCandidate, ContentItem, PdfAnalysis
 
 CHAPTER_PATTERNS = [

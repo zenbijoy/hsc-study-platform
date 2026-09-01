@@ -1,20 +1,20 @@
 from __future__ import annotations
 
-import os
 import threading
 import uuid
 from pathlib import Path
 from typing import Any
+
 from fastapi import FastAPI, File, Header, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
+
 from app.catalog import get_catalog
 from app.config import settings
 from app.job_store import JobStore
 from app.models import ImportJob, RightsStatus
 from app.pipeline import ContentPipeline
-from app.utils import sha256_file
 
 app = FastAPI(title="HSC Content Factory", version="0.2.0")
 app.add_middleware(

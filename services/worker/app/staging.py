@@ -4,6 +4,7 @@ import json
 import sqlite3
 from pathlib import Path
 from typing import Iterable, Iterator
+
 from app.dedupe import attach_fingerprint
 from app.models import ContentItem
 

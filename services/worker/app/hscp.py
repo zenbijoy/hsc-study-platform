@@ -7,7 +7,9 @@ import struct
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
 from app.utils import b64d, b64e
 
 MAGIC = b"HSCP0001"

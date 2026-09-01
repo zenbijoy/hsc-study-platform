@@ -4,11 +4,12 @@ import base64
 import json
 import uuid
 from pathlib import Path
+
 from app.catalog import get_catalog
 from app.config import settings
 from app.hscp import build_hscp, wrap_content_key_for_server
 from app.job_store import JobStore
-from app.models import ContentItem, ImportJob
+from app.models import ImportJob
 from app.packs import build_content_packs
 from app.parsers import iter_content_file
 from app.pdf_analyzer import analyze_pdf

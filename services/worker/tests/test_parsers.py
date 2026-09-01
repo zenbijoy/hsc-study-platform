@@ -1,6 +1,7 @@
 from pathlib import Path
-from app.parsers import parse_content_file
+
 from app.dedupe import deduplicate
+from app.parsers import parse_content_file
 
 
 def test_tagged_formula(tmp_path: Path):

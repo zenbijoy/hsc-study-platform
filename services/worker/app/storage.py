@@ -3,9 +3,9 @@ from __future__ import annotations
 import mimetypes
 import os
 import shutil
-import uuid
 from abc import ABC, abstractmethod
 from pathlib import Path
+
 from app.config import settings
 from app.models import StorageObject
 
