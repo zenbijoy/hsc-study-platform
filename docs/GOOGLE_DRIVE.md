@@ -1,53 +1,43 @@
-# Google Drive 5 TB Integration
+# Google Drive 5 TB Integration & Warehouse Architecture
 
-Drive is used as an **origin/warehouse**, not as Postgres and not as your forever high-traffic CDN.
+**Specification**: `docs/GOOGLE_DRIVE.md`  
+**Purpose**: Private origin warehouse for large original PDFs, covers, search packs, and encrypted HSCP books.
 
-## Folder model
+---
+
+## 1. Folder Structure
 
 ```text
 HSC_CONTENT_FACTORY/
-  00_INBOX/
-  10_ORIGINALS/
-  20_SECURE_BOOKS/
-  30_CONTENT_PACKS/
-  40_ASSETS/
-  90_BACKUPS/
+  00_INBOX/           (Upload sessions & temporary processing)
+  10_ORIGINALS/       (Private raw PDF warehouse: bookId/original.pdf)
+  20_SECURE_BOOKS/    (Encrypted HSCP packages: bookId/v1.hscp)
+  30_CHAPTER_PACKS/   (Optional chapter packages)
+  40_SEARCH_INDEXES/  (SQLite FTS5 search packs)
+  50_COVERS/          (Generated cover thumbnails & previews)
+  60_CONTENT_PACKS/   (Bulk question/formula SQLite packs)
+  90_ARCHIVE/         (Archived versions & rollback history)
+  99_FAILED/          (Failed job artifacts for debug retention)
 ```
 
-The worker can also work with a single configured folder ID and identify files using `appProperties`; you do not have to manually create every subfolder.
+---
 
-## Personal Google account / Google One storage
+## 2. Security & Credentials Boundary
 
-For a personal 5 TB Drive, use OAuth 2.0 with a refresh token. The worker supports:
+- **Server-Side Only**: Drive credentials (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN`, or Service Account keys) live strictly on the backend worker.
+- **Zero Browser Exposure**: Admin uploads stream through resumable worker sessions (`/v1/uploads/pdf/session`), preventing any Google credentials from reaching the browser.
+- **Zero Mobile Direct Access**: Mobile clients only receive device-bound licenses and download descriptors for encrypted `.hscp` packages.
+
+---
+
+## 3. Configuration & Resumable Streaming
 
 ```env
-STORAGE_PROVIDER=drive
+STORAGE_PROVIDER=drive # or 'local' for local development
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
 GOOGLE_REFRESH_TOKEN=...
 GOOGLE_DRIVE_FOLDER_ID=...
+GOOGLE_DRIVE_PUBLIC_PACKAGES=false
+UPLOAD_CHUNK_SIZE_MB=8
 ```
-
-Never put these values in the mobile app or Admin browser bundle.
-
-## Getting a refresh token
-
-1. Create a Google Cloud project and enable Google Drive API.
-2. Configure OAuth consent screen.
-3. Create an OAuth Desktop client.
-4. Put `client_secret.json` on your own machine.
-5. Run `python scripts/google_oauth_bootstrap.py --client-secret client_secret.json` from `services/worker`.
-6. Sign in to the account owning the 5 TB Drive.
-7. Copy the printed refresh token into the worker's local `.env`.
-
-The bootstrap helper requests the minimal practical Drive scope needed by the configured mode. If you want the worker to manage only files it creates, prefer `drive.file` where your workflow allows it.
-
-## Delivery
-
-The recommended production flow is:
-
-- **Original PDF:** always private.
-- **HSCP encrypted package:** can be served through a controlled endpoint, or optionally made link-readable because ciphertext is not useful without a device license.
-- **Popular packages:** mirror to Cloudflare R2 later for faster delivery and egress economics.
-
-The mobile client stores a `delivery_url` supplied by the catalog/license response; it does not know or need Drive credentials.

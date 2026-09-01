@@ -124,6 +124,7 @@ Open:
 
 ```text
 http://localhost:3000
+http://localhost:3000/books/import (PDF Upload Studio)
 ```
 
 ### Terminal 3 — Mobile app

@@ -7,6 +7,19 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#071018",
+      "resizeMode": "contain"
+    },
+    "androidStatusBar": {
+      "barStyle": "light-content",
+      "backgroundColor": "#071018",
+      "translucent": false
+    },
+    "androidNavigationBar": {
+      "backgroundColor": "#071018",
+      "barStyle": "light-content"
+    },
     "android": {
       "package": "com.example.hscstudy",
       "allowBackup": false,

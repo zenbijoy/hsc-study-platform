@@ -1,18 +1,22 @@
 from __future__ import annotations
 
+import os
 import threading
 import uuid
 from pathlib import Path
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from typing import Any
+from fastapi import FastAPI, File, Header, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
+from app.catalog import get_catalog
 from app.config import settings
 from app.job_store import JobStore
-from app.models import ImportJob
+from app.models import ImportJob, RightsStatus
 from app.pipeline import ContentPipeline
+from app.utils import sha256_file
 
-app = FastAPI(title="HSC Content Factory", version="0.1.0")
+app = FastAPI(title="HSC Content Factory", version="0.2.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
@@ -22,7 +26,11 @@ app.add_middleware(
 )
 
 store = JobStore(settings.job_db)
+catalog = get_catalog()
 stop_event = threading.Event()
+
+# Active resumable sessions
+resumable_sessions: dict[str, dict[str, Any]] = {}
 
 
 class TextImportRequest(BaseModel):
@@ -33,6 +41,28 @@ class TextImportRequest(BaseModel):
 
 class PublishRequest(BaseModel):
     rights_confirmed: bool = False
+    rights_status: RightsStatus = "LICENSED"
+    distribution_allowed: bool = True
+
+
+class RollbackRequest(BaseModel):
+    target_version_id: str
+
+
+class ReviewUpdateRequest(BaseModel):
+    title: str | None = None
+    subject_id: str | None = None
+    paper_number: int | None = None
+    chapters: list[dict[str, Any]] | None = None
+    rights_status: RightsStatus | None = None
+    distribution_allowed: bool | None = None
+
+
+class ResumableSessionRequest(BaseModel):
+    filename: str
+    file_size: int
+    subject_hint: str | None = None
+    paper_hint: int | None = None
 
 
 def worker_loop(slot: int):
@@ -62,21 +92,85 @@ def health():
     return {
         "ok": True,
         "storage": settings.storage_provider,
-        "version": "0.1.0",
+        "version": "0.2.0",
         "worker_concurrency": settings.worker_concurrency,
+        "max_upload_bytes": settings.max_upload_bytes,
     }
 
 
-def _new_job(path: Path) -> ImportJob:
+@app.post("/v1/uploads/pdf/session")
+def create_resumable_session(request: ResumableSessionRequest):
+    if request.file_size > settings.max_upload_bytes:
+        raise HTTPException(413, f"File size {request.file_size} exceeds max {settings.max_upload_bytes} bytes")
+
+    session_id = str(uuid.uuid4())
+    safe_name = Path(request.filename).name
+    temp_target = settings.inbox_dir / "sessions" / session_id / safe_name
+    temp_target.parent.mkdir(parents=True, exist_ok=True)
+
+    resumable_sessions[session_id] = {
+        "filename": safe_name,
+        "file_size": request.file_size,
+        "bytes_written": 0,
+        "target_path": str(temp_target),
+        "subject_hint": request.subject_hint,
+        "paper_hint": request.paper_hint,
+    }
+
+    return {
+        "session_id": session_id,
+        "chunk_size": 8 * 1024 * 1024,
+        "upload_url": f"/v1/uploads/pdf/{session_id}/chunk",
+    }
+
+
+@app.put("/v1/uploads/pdf/{session_id}/chunk")
+async def upload_chunk(
+    session_id: str,
+    request: Request,
+    content_range: str | None = Header(None),
+):
+    session = resumable_sessions.get(session_id)
+    if not session:
+        raise HTTPException(404, "Resumable session not found or expired")
+
+    target = Path(session["target_path"])
+    chunk_data = await request.body()
+    chunk_len = len(chunk_data)
+
+    with target.open("ab") as f:
+        f.write(chunk_data)
+
+    session["bytes_written"] += chunk_len
+    return {
+        "bytes_received": session["bytes_written"],
+        "total_bytes": session["file_size"],
+        "is_complete": session["bytes_written"] >= session["file_size"],
+    }
+
+
+@app.post("/v1/uploads/pdf/{session_id}/complete", response_model=ImportJob)
+def complete_resumable_upload(session_id: str):
+    session = resumable_sessions.pop(session_id, None)
+    if not session:
+        raise HTTPException(404, "Resumable session not found")
+
+    target = Path(session["target_path"])
+    if not target.exists() or target.stat().st_size != session["file_size"]:
+        raise HTTPException(400, "File size mismatch or incomplete chunks")
+
+    job_id = str(uuid.uuid4())
     job = ImportJob(
-        id=path.parent.name if len(path.parent.name) >= 32 else str(uuid.uuid4()),
-        source_name=path.name,
-        source_type=path.suffix.lower().lstrip("."),
-        source_path=str(path),
+        id=job_id,
+        source_name=session["filename"],
+        source_type="pdf",
+        source_path=str(target),
         status="queued",
         stage="upload",
         progress=1,
-        message="Source staged; queued for processing",
+        subject_id=session.get("subject_hint"),
+        paper_number=session.get("paper_hint"),
+        message="Resumable upload complete; queued for processing",
     )
     store.put(job)
     return job
@@ -103,7 +197,16 @@ async def upload(file: UploadFile = File(...)):
     except Exception:
         target.unlink(missing_ok=True)
         raise
-    job = ImportJob(id=job_id, source_name=safe_name, source_type=suffix.lstrip("."), source_path=str(target), status="queued", stage="upload", progress=1, message="Upload complete; queued for processing")
+    job = ImportJob(
+        id=job_id,
+        source_name=safe_name,
+        source_type=suffix.lstrip("."),
+        source_path=str(target),
+        status="queued",
+        stage="upload",
+        progress=1,
+        message="Upload complete; queued for processing",
+    )
     store.put(job)
     return job
 
@@ -119,7 +222,16 @@ def import_text(request: TextImportRequest):
     if len(encoded) > min(settings.max_upload_bytes, 64 * 1024 * 1024):
         raise HTTPException(413, "Text import is too large; use file upload for large datasets")
     target.write_bytes(encoded)
-    job = ImportJob(id=job_id, source_name=target.name, source_type=request.format, source_path=str(target), status="queued", stage="upload", progress=1, message="AI/text payload staged")
+    job = ImportJob(
+        id=job_id,
+        source_name=target.name,
+        source_type=request.format,
+        source_path=str(target),
+        status="queued",
+        stage="upload",
+        progress=1,
+        message="AI/text payload staged",
+    )
     store.put(job)
     return job
 
@@ -137,18 +249,32 @@ def recent_imports(limit: int = 25):
     return store.list_recent(min(max(limit, 1), 100))
 
 
-@app.post("/v1/imports/{job_id}/retry", response_model=ImportJob)
-def retry(job_id: str):
+@app.patch("/v1/imports/{job_id}/review", response_model=ImportJob)
+def update_review(job_id: str, request: ReviewUpdateRequest):
     job = store.get(job_id)
     if not job:
         raise HTTPException(404, "Import job not found")
-    if job.status != "failed":
-        raise HTTPException(409, "Only failed jobs can be retried")
-    job.status = "queued"
-    job.stage = "queued"
-    job.progress = 0
-    job.error = None
-    job.message = "Queued for retry"
+    if job.status != "ready_for_review":
+        raise HTTPException(409, "Can only update review metadata when job is ready_for_review")
+
+    book = job.result.get("book") or {}
+    if request.title:
+        book["title"] = request.title
+    if request.subject_id:
+        book["subject_id"] = request.subject_id
+    if request.paper_number:
+        book["paper"] = request.paper_number
+    if request.chapters:
+        book["chapters"] = request.chapters
+        book["chapter_count"] = len(request.chapters)
+    if request.rights_status:
+        job.rights_status = request.rights_status
+        book["rights_status"] = request.rights_status
+    if request.distribution_allowed is not None:
+        job.distribution_allowed = request.distribution_allowed
+        book["distribution_allowed"] = request.distribution_allowed
+
+    job.result["book"] = book
     store.put(job)
     return job
 
@@ -159,9 +285,26 @@ def publish(job_id: str, request: PublishRequest):
     if not job:
         raise HTTPException(404, "Import job not found")
     try:
-        return ContentPipeline(store).publish(job, request.rights_confirmed)
+        return ContentPipeline(store).publish(
+            job,
+            rights_confirmed=request.rights_confirmed,
+            rights_status=request.rights_status,
+            distribution_allowed=request.distribution_allowed,
+        )
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
+
+
+@app.post("/v1/books/{book_id}/rollback")
+def rollback_book(book_id: str, request: RollbackRequest):
+    catalog.rollback_book_version(book_id, request.target_version_id)
+    return {"ok": True, "book_id": book_id, "active_version_id": request.target_version_id}
+
+
+@app.post("/v1/books/{book_id}/unpublish")
+def unpublish_book(book_id: str):
+    catalog.unpublish_book(book_id)
+    return {"ok": True, "book_id": book_id, "is_published": False}
 
 
 @app.get("/v1/content/{logical_path:path}")

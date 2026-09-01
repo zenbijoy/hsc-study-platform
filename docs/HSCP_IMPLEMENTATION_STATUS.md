@@ -20,7 +20,7 @@
 | **Ephemeral X25519 Key Exchange** | `supabase/functions/book-license/index.ts` | **COMPLETE** | Edge Function generates ephemeral X25519 keypair, derives HKDF-SHA256 shared secret with registered device public key, and wraps content key. |
 | **On-Device License Decryption** | `apps/mobile/lib/license.ts` | **COMPLETE** | Client unwraps server response using local X25519 private key + HKDF + AES-GCM to obtain usable content key. |
 | **Decrypted Cache Materialization** | `apps/mobile/lib/hscp.ts` | **COMPLETE** | Chunks decrypted in app sandbox cache (`FileSystem.cacheDirectory`) for native `react-native-pdf` viewer. |
-| **Temporary Cache Auto-Purging** | `apps/mobile/app/reader/[id].tsx` | **COMPLETE** | Decrypted PDF cache file is securely deleted on reader unmount and when app transitions to background (`AppState !== 'active'`). |
+| **Temporary Cache Auto-Purging** | `apps/mobile/src/features/reader/security/plaintextLifecycle.ts`, `apps/mobile/src/features/reader/hooks/useSecureReader.ts` | **COMPLETE** | Decrypted PDF cache file is securely deleted on reader unmount and when app transitions to background (`AppState !== 'active'`). |
 | **Native In-Memory Page/Tile Renderer** | N/A | **NOT IMPLEMENTED** (Production Extension Point) | Current flow securely materializes temporary decrypted PDF on disk in app sandbox. Future version can render page tiles in memory. |
 
 ---

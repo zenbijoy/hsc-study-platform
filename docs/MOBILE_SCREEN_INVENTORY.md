@@ -6,38 +6,38 @@
 
 ## 1. Authentication & Onboarding
 
-### Splash
-- **ROUTE**: `/` (Initial Redirect)
-- **FILE**: `apps/mobile/app/index.tsx`
-- **CURRENT STATUS**: WORKING
-- **BACKEND DEPENDENCIES**: None (static bootstrap)
-- **LOCAL STORAGE DEPENDENCIES**: `localStorage` session check
-- **DESIGN QUALITY**: Minimalist redirect stub
-- **FUNCTIONAL QUALITY**: 100% redirects directly to `/(tabs)`
-- **KNOWN PROBLEMS**: No animated splash or initial onboarding check logic
-- **RECOMMENDED PHASE**: Phase 03 (Dedicated Animated Splash / Onboarding Gate)
+### Splash & Boot Experience
+- **ROUTE**: `/` (Managed in `apps/mobile/app/_layout.tsx`)
+- **FILE**: `apps/mobile/src/components/shell/BootSplashScreen.tsx` & `apps/mobile/src/bootstrap/startupOrchestrator.ts`
+- **CURRENT STATUS**: COMPLETE & VERIFIED
+- **BACKEND DEPENDENCIES**: None (offline safe)
+- **LOCAL STORAGE DEPENDENCIES**: SQLite `schema_migrations` & Supabase session restoration
+- **DESIGN QUALITY**: High (Center brand mark, smooth entrance/exit, delayed status indicator)
+- **FUNCTIONAL QUALITY**: 100% (No white flashes, deterministic route resolution)
+- **KNOWN PROBLEMS**: None
+- **RECOMMENDED PHASE**: Phase 04 (Completed)
 
-### Login / Register
-- **ROUTE**: `/auth`
-- **FILE**: `apps/mobile/app/auth.tsx`
-- **CURRENT STATUS**: WORKING (Supabase Auth + Demo fallback)
-- **BACKEND DEPENDENCIES**: `supabase.auth.signInWithPassword`, `supabase.auth.signUp`
-- **LOCAL STORAGE DEPENDENCIES**: `localStorage` (session persistence)
-- **DESIGN QUALITY**: High (Glassmorphism dark theme with mode toggle)
-- **FUNCTIONAL QUALITY**: 90% (Supports email/password sign-in and sign-up with error handling)
-- **KNOWN PROBLEMS**: OAuth (Google/Apple) providers not yet wired
-- **RECOMMENDED PHASE**: Phase 03 (Social Auth & Password Reset)
+### Login / Register / Recovery Suite
+- **ROUTES**: `/(auth)/login`, `/(auth)/register`, `/(auth)/forgot-password`, `/(auth)/verify-email`, `/auth`
+- **FILES**: `apps/mobile/app/(auth)/*.tsx` & `apps/mobile/src/features/auth/`
+- **CURRENT STATUS**: COMPLETE & VERIFIED
+- **BACKEND DEPENDENCIES**: Supabase Auth (`signInWithPassword`, `signUp`, `resetPasswordForEmail`) + `0002_auth_profile_trigger.sql`
+- **LOCAL STORAGE DEPENDENCIES**: SecureStore & Supabase session storage
+- **DESIGN QUALITY**: Premium (Phase 03 tokens, KeyboardAvoidingView, eye toggle, strength indicator)
+- **FUNCTIONAL QUALITY**: 100% (Client validation, password match check, 60s cooldown, friendly error normalization)
+- **KNOWN PROBLEMS**: None
+- **RECOMMENDED PHASE**: Phase 05 (Completed)
 
-### Onboarding
-- **ROUTE**: `/onboarding`
-- **FILE**: Not created
-- **CURRENT STATUS**: NOT IMPLEMENTED
-- **BACKEND DEPENDENCIES**: `profiles` table (HSC year, group selection)
-- **LOCAL STORAGE DEPENDENCIES**: `has_completed_onboarding` flag
-- **DESIGN QUALITY**: N/A
-- **FUNCTIONAL QUALITY**: N/A
-- **KNOWN PROBLEMS**: First-time users are dropped straight into tabs without HSC group/year customization
-- **RECOMMENDED PHASE**: Phase 03
+### Onboarding & Personalization
+- **ROUTE**: `/(auth)/onboarding`
+- **FILE**: `apps/mobile/app/(auth)/onboarding.tsx` & `apps/mobile/src/features/onboarding/`
+- **CURRENT STATUS**: COMPLETE & VERIFIED
+- **BACKEND DEPENDENCIES**: `complete_onboarding_atomic` RPC in `0003_onboarding_atomic_rpc.sql`
+- **LOCAL STORAGE DEPENDENCIES**: SQLite `onboarding_draft` persistence
+- **DESIGN QUALITY**: Premium (Phase 03 tokens, segmented progress header, selectable year/group/board cards, focus chips)
+- **FUNCTIONAL QUALITY**: 100% (Draft persistence, atomic RPC transaction, empty-array safe updates)
+- **KNOWN PROBLEMS**: None
+- **RECOMMENDED PHASE**: Phase 06 (Completed)
 
 ---
 
@@ -45,25 +45,25 @@
 
 ### Home Dashboard
 - **ROUTE**: `/(tabs)` (Index tab)
-- **FILE**: `apps/mobile/app/(tabs)/index.tsx`
-- **CURRENT STATUS**: WORKING
-- **BACKEND DEPENDENCIES**: `subjects`, `books`, `formula_catalog`
-- **LOCAL STORAGE DEPENDENCIES**: `useStudyStore` (streak days, study sessions)
-- **DESIGN QUALITY**: High (Gradient hero card, streak counter, formula of the day)
-- **FUNCTIONAL QUALITY**: High (Direct reader resume, quick quiz modal trigger)
-- **KNOWN PROBLEMS**: Notification drawer icon is currently non-functional placeholder
-- **RECOMMENDED PHASE**: Phase 04 (Notifications & Dynamic Announcements)
+- **FILE**: `apps/mobile/src/features/home/` & `apps/mobile/app/(tabs)/index.tsx`
+- **CURRENT STATUS**: COMPLETE & VERIFIED
+- **BACKEND DEPENDENCIES**: `subjects`, `books`, `formula_catalog`, and `profiles` personalization
+- **LOCAL STORAGE DEPENDENCIES**: SQLite cached subjects, books, and reading progress
+- **DESIGN QUALITY**: Premium (Phase 03 Design System, Personalized Greeting, Continue Reading Hero, Prioritized Subjects, Quick Actions, Daily Formula, Board Practice, Recommendations)
+- **FUNCTIONAL QUALITY**: 100% (Local SQLite first, background TanStack Query refresh, whitelisted section registry, deterministic scoring)
+- **KNOWN PROBLEMS**: None
+- **RECOMMENDED PHASE**: Phase 07 (Completed)
 
-### Library
+### Library & Textbook Discovery
 - **ROUTE**: `/(tabs)/library`
-- **FILE**: `apps/mobile/app/(tabs)/library.tsx`
-- **CURRENT STATUS**: WORKING
-- **BACKEND DEPENDENCIES**: `books`, `book_versions`
-- **LOCAL STORAGE DEPENDENCIES**: `catalog.ts` demo cache
-- **DESIGN QUALITY**: High (Subject filter pills, live search bar, FlashList)
-- **FUNCTIONAL QUALITY**: High (Realtime client-side search & filtering)
-- **KNOWN PROBLEMS**: No sorting dropdown (e.g. Sort by Year, Recent)
-- **RECOMMENDED PHASE**: Phase 04
+- **FILE**: `apps/mobile/src/features/library/` & `apps/mobile/app/(tabs)/library.tsx`
+- **CURRENT STATUS**: COMPLETE & VERIFIED
+- **BACKEND DEPENDENCIES**: `books`, `book_versions`, and `0005_library_catalog_indexes.sql`
+- **LOCAL STORAGE DEPENDENCIES**: SQLite cached books & local reading progress
+- **DESIGN QUALITY**: Premium (Header with View Toggle, SearchBar, Horizontal FilterBar, ActiveFilterChips, 2-Column Grid & Compact List views, SortSheet, FilterSheet)
+- **FUNCTIONAL QUALITY**: 100% (Normalized search, multi-dimensional filters, deterministic recommendation scoring, offline catalog browsing)
+- **KNOWN PROBLEMS**: None
+- **RECOMMENDED PHASE**: Phase 09 (Completed)
 
 ### Formula Vault
 - **ROUTE**: `/(tabs)/formulas`
@@ -102,49 +102,60 @@
 
 ## 3. Content & Reader Screens
 
+### Subject Explorer & Paper Navigation
+- **ROUTE**: `/subject/[subjectId]`
+- **FILE**: `apps/mobile/app/subject/[subjectId].tsx` & `apps/mobile/src/features/subjects/`
+- **CURRENT STATUS**: COMPLETE & VERIFIED
+- **BACKEND DEPENDENCIES**: `subjects`, `syllabus_chapters`, `content_packs`, `formula_catalog`
+- **LOCAL STORAGE DEPENDENCIES**: SQLite `subjectFixtures.ts` & local reading progress
+- **DESIGN QUALITY**: Premium (SubjectHero with accent tints, PaperSelector tabs, SubjectStats, ContinueSubjectStudy card, ChapterSection, FormulaPreview)
+- **FUNCTIONAL QUALITY**: 100% (Canonical syllabus separation, fast paper switching, precomputed statistics, offline-aware fallback)
+- **KNOWN PROBLEMS**: None
+- **RECOMMENDED PHASE**: Phase 08 (Completed)
+
 ### Book Details & Chapter Index
 - **ROUTE**: `/book/[id]`
-- **FILE**: `apps/mobile/app/book/[id].tsx`
-- **CURRENT STATUS**: WORKING
-- **BACKEND DEPENDENCIES**: `books`, `book_versions`, `book_chapters`
-- **LOCAL STORAGE DEPENDENCIES**: `download.ts` (downloaded package check)
-- **DESIGN QUALITY**: High (Glass hero card, page bounds, chapter index)
-- **FUNCTIONAL QUALITY**: High (Offline download button, jump to chapter start page)
-- **KNOWN PROBLEMS**: Real background download progress relies on Expo FileSystem downloadResumable
-- **RECOMMENDED PHASE**: Phase 05
+- **FILE**: `apps/mobile/src/features/books/` & `apps/mobile/app/book/[id].tsx`
+- **CURRENT STATUS**: COMPLETE & VERIFIED
+- **BACKEND DEPENDENCIES**: `books`, `book_versions`, `book_chapters`, `0006_book_details_indexes.sql`
+- **LOCAL STORAGE DEPENDENCIES**: SQLite reading progress & encrypted `.HSCP` package check
+- **DESIGN QUALITY**: Premium (BookDetailsHero, BookPrimaryActions, BookProgressCard, BookStats, BookChapterList with page bounds, BookDownloadSheet with storage check, RelatedStudyTools)
+- **FUNCTIONAL QUALITY**: 100% (Active version resolution, canonical-to-book chapter mapping, secure access resolver, typed reader launch context)
+- **KNOWN PROBLEMS**: None
+- **RECOMMENDED PHASE**: Phase 10 (Completed)
 
 ### Protected PDF Reader
 - **ROUTE**: `/reader/[id]`
-- **FILE**: `apps/mobile/app/reader/[id].tsx`
-- **CURRENT STATUS**: WORKING
+- **FILE**: `apps/mobile/src/features/reader/` & `apps/mobile/app/reader/[id].tsx`
+- **CURRENT STATUS**: COMPLETE & VERIFIED
 - **BACKEND DEPENDENCIES**: `book_versions`, `book-license` Edge Function
-- **LOCAL STORAGE DEPENDENCIES**: `hscp.ts` (cache sandbox), `useStudyStore` (bookmarks, theme)
-- **DESIGN QUALITY**: High (4 color themes: AMOLED, Sepia, Midnight, Light; moving watermark)
-- **FUNCTIONAL QUALITY**: High (Screen capture prevention, background cache auto-clear, page jump)
-- **KNOWN PROBLEMS**: Requires Expo Development Build for `react-native-pdf` binary module on physical device
-- **RECOMMENDED PHASE**: Phase 05 (Native page-tile in-memory renderer)
+- **LOCAL STORAGE DEPENDENCIES**: `hscp.ts` (cache sandbox), SQLite bookmarks & local reading progress
+- **DESIGN QUALITY**: Premium (ReaderHeader, ReaderBottomToolbar, ReaderWatermark, ReaderChapterDrawer, ReaderSearchSheet, ReaderSettingsSheet with 4 display themes)
+- **FUNCTIONAL QUALITY**: 100% (Hardware screenshot prevention, ephemeral sandbox cache auto-purging on background, in-book multi-lingual search, chapter jumps)
+- **KNOWN PROBLEMS**: Native binary PDF rendering requires Expo Development Build when running on physical device
+- **RECOMMENDED PHASE**: Phase 11 (Completed)
 
-### Formula Details (Modal)
-- **ROUTE**: Rendered via `FormulaDetailModal` inside `/(tabs)/formulas` & `/(tabs)/index`
-- **FILE**: `apps/mobile/components/FormulaDetailModal.tsx`
-- **CURRENT STATUS**: WORKING
-- **BACKEND DEPENDENCIES**: `formula_catalog`
-- **LOCAL STORAGE DEPENDENCIES**: `useStudyStore` (favorites)
-- **DESIGN QUALITY**: High (Equation hero box, SI unit table, copy LaTeX button)
-- **FUNCTIONAL QUALITY**: High (Full variable breakdown & clipboard copy)
+### Formula Hub & Details
+- **ROUTE**: `/(tabs)/formulas` & `/formula/[id]`
+- **FILE**: `apps/mobile/src/features/formulas/` & `apps/mobile/app/(tabs)/formulas.tsx`
+- **CURRENT STATUS**: COMPLETE & VERIFIED
+- **BACKEND DEPENDENCIES**: `formula_catalog`, `syllabus_chapters`, `0007_formula_hub_indexes.sql`
+- **LOCAL STORAGE DEPENDENCIES**: SQLite `useStudyStore` (favorites, spaced repetition progress)
+- **DESIGN QUALITY**: Premium (FormulaHero, FormulaCard, FormulaVariablesTable, FormulaConditions, FormulaRelatedBooks, FormulaRevisionCard)
+- **FUNCTIONAL QUALITY**: 100% (Unicode normalized search, flashcard revision with spaced repetition self-rating, textbook page deep-linking, question counts)
 - **KNOWN PROBLEMS**: None
-- **RECOMMENDED PHASE**: Phase 04
+- **RECOMMENDED PHASE**: Phase 12 (Completed)
 
-### Creative Question (CQ) Viewer (Modal)
-- **ROUTE**: Rendered via `CQViewerModal` inside `/(tabs)/practice`
-- **FILE**: `apps/mobile/components/CQViewerModal.tsx`
-- **CURRENT STATUS**: WORKING
-- **BACKEND DEPENDENCIES**: `content_packs`
-- **LOCAL STORAGE DEPENDENCIES**: None
-- **DESIGN QUALITY**: High (Stimulus box, sub-question accordion, mark distribution)
-- **FUNCTIONAL QUALITY**: High (Collapsible solutions with step-by-step marking rubrics)
+### Creative Question (CQ) Bank & Board Engine
+- **ROUTE**: `/cq` & `/cq/[id]`
+- **FILE**: `apps/mobile/src/features/cq/` & `apps/mobile/app/cq/index.tsx`
+- **CURRENT STATUS**: COMPLETE & VERIFIED
+- **BACKEND DEPENDENCIES**: `content_packs`, `0008_cq_catalog_indexes.sql`
+- **LOCAL STORAGE DEPENDENCIES**: SQLite `useStudyStore` (saved questions, practice ratings)
+- **DESIGN QUALITY**: Premium (CQHero, CQCard, CQBoardYearSelector, CQPartList, CQFormulaLinks, CQBookReferences, CQPracticeScreen)
+- **FUNCTIONAL QUALITY**: 100% (9 Boards 2018–2025, sub-questions ক-ঘ with marks and solutions, textbook/formula deep links, practice drill)
 - **KNOWN PROBLEMS**: None
-- **RECOMMENDED PHASE**: Phase 04
+- **RECOMMENDED PHASE**: Phase 13 (Completed)
 
 ### Multiple Choice (MCQ) Quiz Runner (Modal)
 - **ROUTE**: Rendered via `MCQQuizModal` inside `/(tabs)/practice` & `/(tabs)/index`

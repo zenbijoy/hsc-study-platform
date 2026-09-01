@@ -13,7 +13,10 @@ class LocalCatalog:
         self.path = path
         self.lock = threading.Lock()
         if not path.exists():
-            path.write_text(json.dumps({"books": [], "packs": [], "imports": [], "formulas": []}, indent=2), encoding="utf-8")
+            path.write_text(
+                json.dumps({"books": [], "packs": [], "imports": [], "formulas": []}, indent=2),
+                encoding="utf-8",
+            )
 
     def _read(self) -> dict:
         return json.loads(self.path.read_text("utf-8"))
@@ -34,15 +37,19 @@ class LocalCatalog:
             data = self._read()
             books = data.setdefault("books", [])
             existing = next((x for x in books if x.get("id") == book.get("id")), None)
-            if existing: existing.update(book)
-            else: books.append(book)
+            if existing:
+                existing.update(book)
+            else:
+                books.append(book)
             self._write(data)
 
     def upsert_pack(self, manifest: dict[str, Any], storage: dict[str, Any], import_id: str) -> str:
         pack_id = str(uuid.uuid4())
         with self.lock:
             data = self._read()
-            data.setdefault("packs", []).append({"id": pack_id, "import_id": import_id, **manifest, "storage": storage, "is_published": False})
+            data.setdefault("packs", []).append(
+                {"id": pack_id, "import_id": import_id, **manifest, "storage": storage, "is_published": False}
+            )
             self._write(data)
         return pack_id
 
@@ -56,11 +63,20 @@ class LocalCatalog:
                 if row.get("fingerprint") in existing:
                     continue
                 formulas.append({**row, "import_id": import_id, "is_published": False})
-                existing.add(row.get("fingerprint")); added += 1
+                existing.add(row.get("fingerprint"))
+                added += 1
             self._write(data)
             return added
 
-    def publish_import(self, book_id: str | None, book_version_id: str | None, pack_ids: list[str], import_id: str) -> None:
+    def publish_import(
+        self,
+        book_id: str | None,
+        book_version_id: str | None,
+        pack_ids: list[str],
+        import_id: str,
+        rights_status: str = "LICENSED",
+        distribution_allowed: bool = True,
+    ) -> None:
         with self.lock:
             data = self._read()
             if book_id:
@@ -68,6 +84,9 @@ class LocalCatalog:
                     if book.get("id") == book_id:
                         book["is_published"] = True
                         book["published_version_id"] = book_version_id
+                        book["rights_status"] = rights_status
+                        book["distribution_allowed"] = distribution_allowed
+                        book["offline_download_allowed"] = distribution_allowed
             for pack in data.get("packs", []):
                 if pack.get("id") in pack_ids:
                     pack["is_published"] = True
@@ -76,12 +95,29 @@ class LocalCatalog:
                     formula["is_published"] = True
             self._write(data)
 
+    def rollback_book_version(self, book_id: str, target_version_id: str) -> None:
+        with self.lock:
+            data = self._read()
+            for book in data.get("books", []):
+                if book.get("id") == book_id:
+                    book["published_version_id"] = target_version_id
+            self._write(data)
+
+    def unpublish_book(self, book_id: str) -> None:
+        with self.lock:
+            data = self._read()
+            for book in data.get("books", []):
+                if book.get("id") == book_id:
+                    book["is_published"] = False
+            self._write(data)
+
 
 class SupabaseCatalog:
     """Server-side publisher. Service-role key is required and must never be exposed to clients."""
 
     def __init__(self):
         from supabase import create_client
+
         self.client = create_client(settings.supabase_url, settings.supabase_service_role_key)
 
     def upsert_book(self, book: dict[str, Any]) -> None:
@@ -92,11 +128,18 @@ class SupabaseCatalog:
             "title": book["title"],
             "subtitle": book.get("subtitle"),
             "publisher": book.get("publisher"),
+            "subject_id": book.get("subject_id") or "physics",
+            "paper": book.get("paper") or 1,
             "is_protected": bool(book.get("is_protected", True)),
             "is_published": False,
             "chapter_count": int(book.get("chapter_count", 0)),
             "formula_count": int(book.get("formula_count", 0)),
             "source_hash": book.get("source_hash"),
+            "cover_url": book.get("cover_url"),
+            "cover_thumbnail_url": book.get("cover_thumbnail_url"),
+            "rights_status": book.get("rights_status", "UNVERIFIED"),
+            "distribution_allowed": bool(book.get("distribution_allowed", False)),
+            "offline_download_allowed": bool(book.get("offline_download_allowed", False)),
         }).execute()
 
         original = book.get("original_object") or {}
@@ -114,6 +157,8 @@ class SupabaseCatalog:
             "original_metadata": original,
             "secure_metadata": secure,
             "is_active": True,
+            "text_ratio": book.get("text_ratio", 0.0),
+            "is_scanned": book.get("is_scanned", False),
         }).execute()
 
         wrapped = book.get("server_wrapped_content_key") or {}
@@ -127,17 +172,20 @@ class SupabaseCatalog:
 
         chapters = book.get("chapters") or []
         if chapters:
-            rows = [{
-                "book_id": book_id,
-                "book_version_id": version_id,
-                "chapter_number": int(ch["number"]),
-                "title": ch["title"],
-                "start_page": int(ch["start_page"]),
-                "end_page": ch.get("end_page"),
-                "confidence": ch.get("confidence", 1.0),
-                "detection_source": ch.get("source"),
-                "sort_order": int(ch["number"]),
-            } for ch in chapters]
+            rows = [
+                {
+                    "book_id": book_id,
+                    "book_version_id": version_id,
+                    "chapter_number": int(ch["number"]),
+                    "title": ch["title"],
+                    "start_page": int(ch["start_page"]),
+                    "end_page": ch.get("end_page"),
+                    "confidence": ch.get("confidence", 1.0),
+                    "detection_source": ch.get("source"),
+                    "sort_order": int(ch["number"]),
+                }
+                for ch in chapters
+            ]
             self.client.table("book_chapters").upsert(rows, on_conflict="book_version_id,chapter_number").execute()
 
     def upsert_pack(self, manifest: dict[str, Any], storage: dict[str, Any], import_id: str) -> str:
@@ -145,7 +193,8 @@ class SupabaseCatalog:
         subject = key_parts[0] if key_parts else None
         pack_type = key_parts[-1] if key_parts else "mixed"
         allowed = {"formula", "cq", "mcq", "note", "definition", "flashcard", "search", "mixed"}
-        if pack_type not in allowed: pack_type = "mixed"
+        if pack_type not in allowed:
+            pack_type = "mixed"
         pack_id = str(uuid.uuid4())
         row = {
             "id": pack_id,
@@ -165,7 +214,6 @@ class SupabaseCatalog:
         try:
             self.client.table("content_packs").insert(row).execute()
         except Exception:
-            # Subject may not yet exist in canonical syllabus. Retry with no subject link rather than lose the pack.
             row["subject_id"] = None
             self.client.table("content_packs").insert(row).execute()
         return pack_id
@@ -194,27 +242,53 @@ class SupabaseCatalog:
                 "is_published": False,
             })
         for i in range(0, len(payloads), 500):
-            self.client.table("formula_catalog").upsert(payloads[i:i+500], on_conflict="fingerprint").execute()
+            self.client.table("formula_catalog").upsert(payloads[i : i + 500], on_conflict="fingerprint").execute()
         return len(payloads)
 
-    def publish_import(self, book_id: str | None, book_version_id: str | None, pack_ids: list[str], import_id: str) -> None:
+    def publish_import(
+        self,
+        book_id: str | None,
+        book_version_id: str | None,
+        pack_ids: list[str],
+        import_id: str,
+        rights_status: str = "LICENSED",
+        distribution_allowed: bool = True,
+    ) -> None:
         if book_id and book_version_id:
-            self.client.table("books").update({"is_published": True, "published_version_id": book_version_id}).eq("id", book_id).execute()
+            self.client.table("books").update({
+                "is_published": True,
+                "published_version_id": book_version_id,
+                "rights_status": rights_status,
+                "distribution_allowed": distribution_allowed,
+                "offline_download_allowed": distribution_allowed,
+            }).eq("id", book_id).execute()
         if pack_ids:
             self.client.table("content_packs").update({"is_published": True}).in_("id", pack_ids).execute()
         self.client.table("formula_catalog").update({"is_published": True}).eq("import_id", import_id).execute()
 
+    def rollback_book_version(self, book_id: str, target_version_id: str) -> None:
+        self.client.table("books").update({"published_version_id": target_version_id}).eq("id", book_id).execute()
+
+    def unpublish_book(self, book_id: str) -> None:
+        self.client.table("books").update({"is_published": False}).eq("id", book_id).execute()
+
     def append(self, collection: str, item: dict[str, Any]) -> None:
         table = "import_audit" if collection == "imports" else "content_pack_audit"
-        payload = item if table == "content_pack_audit" else {
-            "import_id": item.get("id"),
-            "source_name": item.get("source_name"),
-            "source_hash": item.get("source_hash"),
-            "status": item.get("status"),
-            "payload": item,
-        }
-        try: self.client.table(table).insert(payload).execute()
-        except Exception: pass
+        payload = (
+            item
+            if table == "content_pack_audit"
+            else {
+                "import_id": item.get("id"),
+                "source_name": item.get("source_name"),
+                "source_hash": item.get("source_hash"),
+                "status": item.get("status"),
+                "payload": item,
+            }
+        )
+        try:
+            self.client.table(table).insert(payload).execute()
+        except Exception:
+            pass
 
 
 def get_catalog():
