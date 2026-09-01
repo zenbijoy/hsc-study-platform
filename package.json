@@ -11,6 +11,8 @@
     "mobile:android": "npm --workspace apps/mobile run android",
     "admin": "npm --workspace apps/admin run dev",
     "typecheck": "npm --workspace apps/mobile run typecheck && npm --workspace apps/admin run typecheck",
+    "lint": "npm --workspace apps/mobile run lint && npm --workspace apps/admin run lint",
+    "lint:fix": "npm --workspace apps/mobile run lint:fix && npm --workspace apps/admin run lint:fix",
     "doctor": "node scripts/doctor.mjs"
   },
   "engines": {
