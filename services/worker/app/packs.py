@@ -22,7 +22,8 @@ def _slug(value: str) -> str:
 def _sha256_file(path: Path) -> str:
     h = hashlib.sha256()
     with path.open("rb") as f:
-        while b := f.read(1024 * 1024): h.update(b)
+        while b := f.read(1024 * 1024):
+            h.update(b)
     return h.hexdigest()
 
 
@@ -42,7 +43,8 @@ def build_content_packs(stage: StagingContentStore, out_dir: Path, import_id: st
             path = base / f"{import_id}.jsonl.gz"
             with gzip.open(path, "wt", encoding="utf-8", compresslevel=9) as out:
                 for payload in stage.iter_payloads(subject, chapter, content_type):
-                    out.write(payload); out.write("\n")
+                    out.write(payload)
+                    out.write("\n")
             codec = "gzip"
         manifests.append({
             "key": key,

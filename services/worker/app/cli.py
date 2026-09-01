@@ -19,7 +19,8 @@ def main():
     args = parser.parse_args()
     if args.cmd == "import":
         path: Path = args.path.resolve()
-        if not path.is_file(): parser.error(f"Not a file: {path}")
+        if not path.is_file():
+            parser.error(f"Not a file: {path}")
         store = JobStore(settings.job_db)
         job = ImportJob(id=str(uuid.uuid4()), source_name=path.name, source_type=path.suffix.lstrip("."), source_path=str(path), status="processing")
         store.put(job)

@@ -81,8 +81,10 @@ def build_hscp(input_path: Path, output_path: Path, book_id: str, version: int =
                 while block := data.read(1024 * 1024):
                     out.write(block)
         finally:
-            try: tmp_path.unlink(missing_ok=True)
-            except Exception: pass
+            try:
+                tmp_path.unlink(missing_ok=True)
+            except Exception:
+                pass
 
     return HscpBuildResult(output=output_path, content_key=key, header=header, sha256=_sha256(output_path))
 

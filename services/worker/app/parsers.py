@@ -32,14 +32,20 @@ def parse_csv_file(path: Path) -> Iterator[ContentItem]:
         for row_no, row in enumerate(csv.DictReader(f), 2):
             clean = {k.strip(): v for k, v in row.items() if k and v not in (None, "")}
             if "paper" in clean:
-                try: clean["paper"] = int(clean["paper"])
-                except Exception: clean["paper"] = None
+                try:
+                    clean["paper"] = int(clean["paper"])
+                except Exception:
+                    clean["paper"] = None
             if "year" in clean:
-                try: clean["year"] = int(clean["year"])
-                except Exception: clean["year"] = None
+                try:
+                    clean["year"] = int(clean["year"])
+                except Exception:
+                    clean["year"] = None
             if "importance" in clean:
-                try: clean["importance"] = int(clean["importance"])
-                except Exception: clean["importance"] = None
+                try:
+                    clean["importance"] = int(clean["importance"])
+                except Exception:
+                    clean["importance"] = None
             clean.setdefault("source", f"{path.name}:{row_no}")
             clean.setdefault("type", infer_type(clean))
             yield ContentItem.model_validate(clean)
@@ -63,8 +69,10 @@ def _finish_block(kind: str | None, block: dict[str, str], meta: dict[str, str],
         data["latex"] = data.pop("formula")
     for key in ("paper", "year", "importance", "difficulty"):
         if key in data:
-            try: data[key] = int(data[key])
-            except Exception: data[key] = None
+            try:
+                data[key] = int(data[key])
+            except Exception:
+                data[key] = None
     if "tags" in data and isinstance(data["tags"], str):
         data["tags"] = [x.strip() for x in data["tags"].split(",") if x.strip()]
     return ContentItem.model_validate(data)
@@ -93,7 +101,8 @@ def parse_tagged_text(path: Path) -> Iterator[ContentItem]:
             b = BLOCK_RE.match(line.strip())
             if b:
                 item = flush()
-                if item: yield item
+                if item:
+                    yield item
                 current_type = b.group("type").lower()
                 continue
             if current_type:
@@ -104,7 +113,8 @@ def parse_tagged_text(path: Path) -> Iterator[ContentItem]:
                     key = "question" if current_type in ("cq", "mcq") else "title"
                     block[key] = (block.get(key, "") + "\n" + line.strip()).strip()
         item = flush()
-        if item: yield item
+        if item:
+            yield item
 
 
 def iter_content_file(path: Path):
