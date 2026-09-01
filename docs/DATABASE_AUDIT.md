@@ -72,6 +72,23 @@ CREATE INDEX packs_subject_idx ON public.content_packs(subject_id, pack_type, is
 CREATE INDEX progress_user_idx ON public.reading_progress(user_id, last_read_at desc);
 CREATE INDEX bookmarks_user_idx ON public.bookmarks(user_id, created_at desc);
 CREATE INDEX entitlements_user_idx ON public.entitlements(user_id, book_id);
+CREATE INDEX idx_books_status_subject ON public.books(status, subject_id, paper);
+CREATE INDEX idx_books_search_lookup ON public.books(title, publisher, edition);
+CREATE INDEX idx_book_versions_status ON public.book_versions(book_id, is_active, status);
+CREATE INDEX idx_content_issues_lookup ON public.content_issues(book_id, status, priority);
+CREATE INDEX idx_book_audit_timeline ON public.book_audit_log(book_id, created_at desc);
+CREATE INDEX idx_book_relationships_lookup ON public.book_relationships(book_version_id, page_number);
 ```
 
-**Audit Verdict**: Indexing covers all critical user-bound and publication foreign key query paths.
+---
+
+## 6. Phase 16 CMS & Versioning Tables (Migration 0011)
+
+| Table Name | Purpose | Primary Key | Foreign Keys | RLS Enabled | Mobile Access | Admin / Worker Access |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **`book_chapter_revisions`** | Versioned non-destructive chapter mapping drafts | `id (uuid)` | `book_id -> books(id)`, `book_version_id -> book_versions(id)` | **YES** | **BLOCKED** (Admin only) | Service-role full access |
+| **`content_issues`** | Content issue tickets & student error reports | `id (uuid)` | `book_id -> books(id)` | **YES** | INSERT (Student reporting) | Service-role review/resolve |
+| **`book_audit_log`** | Immutable timeline of sensitive administrative actions | `id (uuid)` | `book_id -> books(id)` | **YES** | **BLOCKED** (Admin only) | Service-role insert only |
+| **`book_relationships`** | Version-aware formula, CQ, and concept links | `id (uuid)` | `book_id -> books(id)`, `book_version_id -> book_versions(id)` | **YES** | SELECT (`is_published = true`) | Service-role full access |
+
+**Audit Verdict**: Indexing covers all critical user-bound, CMS catalog filtering, and publication foreign key query paths.

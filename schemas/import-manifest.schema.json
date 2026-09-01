@@ -1,17 +1,71 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "HSC Import Manifest",
+  "title": "HSC Content Factory Import Manifest",
   "type": "object",
-  "required": ["schemaVersion", "collection", "content"],
+  "required": ["schemaVersion", "files"],
   "properties": {
-    "schemaVersion": { "const": 1 },
-    "collection": { "type": "string" },
-    "subject": { "type": "string" },
-    "paper": { "type": "integer" },
-    "source": { "type": "string" },
-    "content": {
+    "schemaVersion": {
+      "type": "integer",
+      "enum": [1, 2]
+    },
+    "groupName": {
+      "type": "string"
+    },
+    "defaults": {
+      "type": "object",
+      "properties": {
+        "subject": { "type": "string" },
+        "paper": { "type": "integer", "enum": [1, 2] },
+        "rightsStatus": {
+          "type": "string",
+          "enum": [
+            "OWNED",
+            "LICENSED",
+            "OPEN_LICENSE",
+            "PUBLIC_DOMAIN",
+            "PUBLISHER_AUTHORIZED",
+            "INTERNAL_ONLY",
+            "UNVERIFIED"
+          ]
+        },
+        "distributionAllowed": { "type": "boolean" },
+        "offlineDownloadAllowed": { "type": "boolean" },
+        "language": { "type": "string", "enum": ["bn", "en", "mixed"] },
+        "processingProfile": { "type": "string", "enum": ["FAST", "STANDARD", "DEEP"] }
+      },
+      "additionalProperties": false
+    },
+    "files": {
       "type": "array",
-      "items": { "$ref": "content-item.schema.json" }
+      "items": {
+        "type": "object",
+        "required": ["path"],
+        "properties": {
+          "path": { "type": "string" },
+          "title": { "type": "string" },
+          "subject": { "type": "string" },
+          "paper": { "type": "integer", "enum": [1, 2] },
+          "publisher": { "type": "string" },
+          "edition": { "type": "string" },
+          "rightsStatus": {
+            "type": "string",
+            "enum": [
+              "OWNED",
+              "LICENSED",
+              "OPEN_LICENSE",
+              "PUBLIC_DOMAIN",
+              "PUBLISHER_AUTHORIZED",
+              "INTERNAL_ONLY",
+              "UNVERIFIED"
+            ]
+          },
+          "distributionAllowed": { "type": "boolean" },
+          "offlineDownloadAllowed": { "type": "boolean" },
+          "customCoverPage": { "type": "integer", "minimum": 1 }
+        },
+        "additionalProperties": false
+      }
     }
-  }
+  },
+  "additionalProperties": false
 }

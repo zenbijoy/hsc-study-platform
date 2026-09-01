@@ -1,28 +1,42 @@
-# Protected Reader Design
+# Protected Reader Security & Cryptographic Lifecycle
 
-The starter deliberately separates **storage protection** from **render protection**.
+## 1. Security Model Overview
 
-## Shipping implementation
+The HSC Study Platform separates **storage protection** from **render protection** to guarantee high-performance PDF rendering on mobile while maintaining strict content confidentiality.
 
-1. Download encrypted `.hscp` into app-private storage.
-2. Obtain a short-lived device-bound wrapped content key from `book-license`.
-3. Unwrap the key with the device X25519 private key held in SecureStore/OS keystore-backed storage.
-4. Decrypt authenticated chunks with AES-256-GCM.
-5. Materialize a temporary PDF only inside the app cache for `react-native-pdf`.
-6. Block screen capture on the protected reader and overlay a moving session watermark.
-7. Delete the temporary decrypted PDF on reader exit and when the app backgrounds.
+---
 
-This is strong against casual copying but not unbreakable DRM: a compromised/rooted device controls the execution environment.
+## 2. Production Security Implementation
 
-## Stronger phase-2 renderer
+1. **Storage Protection**:
+   - Downloaded packages (`.hscp`) are stored strictly within app-private directory (`Paths.documentDirectory`).
+   - Packages are chunked (4MB max) and encrypted with AES-256-GCM using authenticated additional data (AAD) tied to `bookId` and `version`.
 
-For higher-value content, replace the temporary full-PDF materialization with a native page/tile renderer:
+2. **Device-Bound Key Exchange**:
+   - The device generates an X25519 key pair stored in hardware-backed keystore (`expo-secure-store` with `WHEN_UNLOCKED_THIS_DEVICE_ONLY`).
+   - The server delivers a wrapped content key via HKDF-SHA256 and ephemeral X25519 key exchange (`book-license` Supabase Edge Function).
 
-- decrypt only chunks required by the requested page;
-- render into an in-memory bitmap/surface;
-- zero/deallocate plaintext buffers immediately;
-- cache only encrypted data;
-- prefetch adjacent page tiles;
-- keep per-page watermark data in the render pipeline.
+3. **Transient Memory Sandbox**:
+   - The decrypted PDF file is materialized with a randomized non-guessable filename strictly inside `Paths.cache`.
+   - The transient cache is inaccessible to external Android gallery/file apps and other third-party applications.
 
-The HSCP format and license protocol do not need to change when the renderer is upgraded.
+4. **Lifecycle Auto-Purge**:
+   - `SecurePdfViewerScreen` and `ProtectedReaderSession` register hooks on `AppState` changes.
+   - When the user minimizes the app, locks the device, navigates back, or logs out, the temporary decrypted cache is deleted immediately.
+
+5. **Screen Recording & Screenshot Deterrence**:
+   - `expo-screen-capture` activates `preventScreenCaptureAsync` on component mount and releases on unmount.
+   - Native OS displays a black screen or blocks screenshots during reader runtime.
+
+6. **Dynamic Non-PII Watermarking**:
+   - A dynamic floating badge `HSC STUDY • S:<HEX>` cycles across quadrants based on `pageNumber % 4`.
+   - It deliberately displays only a non-sensitive session hash—never user passwords, email addresses, phone numbers, JWTs, or full internal database IDs.
+
+---
+
+## 3. Future Roadmap (Page-by-Page Tile Renderer)
+
+For ultra-high-value proprietary content, the renderer can transition to an in-memory page/tile renderer without modifying the underlying HSCP container or license protocol:
+- Decrypt only 4MB chunks containing requested page indices.
+- Render into an in-memory Skia surface and deallocate immediately.
+- Zero plaintext buffers from RAM after bitmap paint.

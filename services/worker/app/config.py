@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     google_client_secret: str = ""
     google_refresh_token: str = ""
     google_drive_folder_id: str = ""
+    google_drive_inbox_folder_id: str = ""
     google_drive_public_packages: bool = False
     google_application_credentials: str = ""
 
@@ -38,7 +39,22 @@ class Settings(BaseSettings):
     default_chunk_size: int = 4 * 1024 * 1024
     max_upload_bytes: int = 2 * 1024 * 1024 * 1024
     deep_pdf_page_limit: int = 1200
-    worker_concurrency: int = 2
+    worker_concurrency: int = 4
+
+    # Content Factory settings
+    import_concurrency: int = 4
+    ocr_concurrency: int = 2
+    hscp_concurrency: int = 2
+    ai_enabled: bool = False
+    ai_max_calls_per_book: int = 3
+    ai_max_total_tokens: int = 4000
+    ai_timeout_seconds: int = 30
+    auto_process_uploads: bool = True
+    auto_publish_verified: bool = False
+    min_free_disk_bytes: int = 500 * 1024 * 1024
+    max_ocr_pages_per_job: int = 400
+    drive_inbox_scan_interval_minutes: int = 15
+    job_lease_duration_seconds: int = 120
 
     @property
     def allowed_origins(self) -> list[str]:

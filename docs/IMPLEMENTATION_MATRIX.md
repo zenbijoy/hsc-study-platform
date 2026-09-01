@@ -2,6 +2,22 @@
 
 | Feature / Subsystem | Existing | Quality | Backend Status | UI Status | Security Status | Current / Next Phase |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Book Catalog Management** | Yes | Premium | Server-side indexed query, multi-filter, pagination | `/books` (25–50 rows, bulk actions) | Atomic bulk mutations | **PHASE 16 COMPLETE** |
+| **Book Details Admin Studio**| Yes | Premium | `/v1/books/{id}` & Optimistic locking | `/books/[bookId]` (11 Workspace Tabs) | Zero secret leak | **PHASE 16 COMPLETE** |
+| **Metadata & Provenance Editor**| Yes | Premium | `ADMIN_OVERRIDE` locking & audit logging | Controlled form with provenance badges | Optimistic `version_token` | **PHASE 16 COMPLETE** |
+| **Cover Asset Manager** | Yes | Premium | Multi-page scoring (Pages 1–3) | Candidate picker & custom cover URL | Safe replacement pointers | **PHASE 16 COMPLETE** |
+| **Visual Chapter & Page Map Editor**| Yes| Premium | Non-destructive `book_chapter_revisions` | 3-Pane Layout (Page rail, preview, editor) | Split, Merge & Gap warnings | **PHASE 16 COMPLETE** |
+| **Multi-Version Management & Diff**| Yes | Premium | `book_versions` atomic pointer switch | Side-by-side diff (Metadata, chapters, pages) | 0-downtime rollback | **PHASE 16 COMPLETE** |
+| **Publishing Console** | Yes | Premium | `validateBookPublication` & bulk release | `/publishing` (Ready, Blocked, Updates) | Legal rights confirmation | **PHASE 16 COMPLETE** |
+| **Quality Control & Issue Tracker**| Yes| Premium | Automated scanners & `content_issues` table | `/quality` (Metric cards, issue workflow) | Strict release blocker | **PHASE 16 COMPLETE** |
+| **Realistic Mobile Preview** | Yes | Premium | Shared view-model transforms | Mobile Library Card, Details & Drawer | "DRAFT PREVIEW" watermark | **PHASE 16 COMPLETE** |
+| **Autonomous Content Factory** | Yes | Premium | Priority Queue, Worker Leases, Checkpoints | `/imports/bulk` Mass Ingestion Studio | Atomic worker crash recovery | **PHASE 15 COMPLETE** |
+| **Mass PDF Ingestion & Inboxes**| Yes | Premium | Google Drive 00_INBOX + Local Folder | 1,000-Row Virtualized Table | Zero direct public links | **PHASE 15 COMPLETE** |
+| **Canonical Syllabus Matching** | Yes | Premium | NCTB Dictionary + Fuzzy Aliases | Bengali & English Auto-Classifier | Confidence scoring & provenance | **PHASE 15 COMPLETE** |
+| **Dedupe & Version Engine** | Yes | Premium | SHA-256 Exact + Edition/Page Diff | Duplicate & New Version Badges | Collision-safe version trees | **PHASE 15 COMPLETE** |
+| **Cover Candidate Scoring** | Yes | Premium | Pages 1–3 Scoring (Image/Density) | Multi-Page Candidate Selector | High-res PNG packaging | **PHASE 15 COMPLETE** |
+| **Admin Review Queue & Hotkeys**| Yes | Premium | `/v1/content-factory/review` & Batch Mutate | `/review` (J/K/A/S Shortcuts) | Dry-run publish validation | **PHASE 15 COMPLETE** |
+| **Bulk Publishing & Quality Gate**| Yes| Premium | `validateBookPublication` Quality Gate | Bulk Publish Transaction & Modal | Strict Rights Enforcement | **PHASE 15 COMPLETE** |
 | **Admin PDF Upload Studio** | Yes | Premium | Worker `/v1/uploads/pdf/session` | `/books/import` & `PdfDropZone` | Zero secrets in browser | **PHASE 14 COMPLETE** |
 | **Bulk PDF Ingestion** | Yes | Premium | `import_folder.py` & Multi-drop | UploadQueue + ProcessingPipeline | Controlled concurrency | **PHASE 14 COMPLETE** |
 | **Resumable 300MB–2GB Upload** | Yes | Premium | 8MB chunked upload stream | Resumable chunk client | Streamed to disk (O(1) RAM) | **PHASE 14 COMPLETE** |
@@ -57,4 +73,32 @@
 | **Domain Type System** | Yes | High | Normalized `AppError` + Domain models | Typed props | Locked | **PHASE 02 LOCKED** |
 | **Repository Layer** | Yes | High | Data fetching + error mapping | Zero raw DB in UI | Locked | **PHASE 02 LOCKED** |
 | **Query Engine** | Yes | High | QueryKey factory + QueryClient | Cached | Locked | **PHASE 02 LOCKED** |
-| **MCQ Practice Sprint** | Yes | High | Content packs | Interactive quiz with derivation | Local score analytics | Phase 15 |
+
+---
+
+## Final Production Release Summary (Phase 18)
+
+### Core V1 Subsystems — 100% Complete & Verified
+- [x] Identity, Supabase Authentication & Atomic Onboarding RPC
+- [x] Home Dashboard, Subject Explorer & Advanced Book Library
+- [x] Secure PDF Reader (Theme Comfort, Hardware Screenshot Blocking, Moving Watermark, Page Clamping)
+- [x] AES-256-GCM Chunked Encrypted Offline Packaging (HSCP) & Airplane Mode Reading
+- [x] Formula Vault, Variable Cross-Linking & Spaced Repetition Flashcards
+- [x] Board Creative Question (CQ) Explorer, Structured Sub-Questions & Mark Rubrics
+- [x] Autonomous Content Factory, Priority Queue & Stale Worker Lease Crash Recovery
+- [x] Mass Ingestion Studio (Google Drive 00_INBOX & Local Folder Discovery)
+- [x] Accelerated Ingestion Review Queue with Keyboard Shortcuts (`J`/`K`/`A`/`S`)
+- [x] Unified Admin Book Catalog (`/books`), 11-Tab Single Book Studio (`/books/[bookId]`)
+- [x] 3-Pane Visual Chapter & Page Map Editor (Split, Merge, Overlap & Gap Warnings)
+- [x] Multi-Version Management, Side-by-Side Version Diff Engine & 0-Downtime Rollback
+- [x] Centralized Publication Quality Gates, Legal Rights Guard & Rights Assignment Modal
+- [x] Publishing Console (`/publishing`), Content Quality Dashboard (`/quality`) & Content Issue Tracker
+- [x] Strict Row-Level Security (RLS) across all 11 Database Migrations
+- [x] Production Docker Packaging for Worker & Admin Studio
+
+### Optional V2 Subsystems — Deliberately Deferred to V2 (Non-Blocking)
+- [ ] AI Interactive Tutor & Conversational Copilot
+- [ ] Adaptive Dynamic MCQ Difficulty Engine
+- [ ] Student Social Leaderboards & Gamification Badges
+- [ ] Vector Embeddings & Hybrid Semantic Search
+- [ ] Automated Teacher Rubric Grading Portal

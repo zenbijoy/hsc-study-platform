@@ -32,7 +32,14 @@ Python Content Factory on your PC/VPS
 
 Admin Studio (Next.js)
         |
-        +--> Content Factory API
+        +--> /books (Book Catalog Manager & Bulk Operations)
+        +--> /books/[bookId] (11-Tab Single Book Studio & Visual Chapter Editor)
+        +--> /publishing (Publishing Quality Console & Bulk Release)
+        +--> /quality (Content Quality Dashboard & Issue Scanner)
+        +--> /imports/bulk (Mass Ingestion Studio — Drive Inbox & Local Folder discovery)
+        +--> /review (Accelerated Review Queue & Hotkeys Studio)
+        +--> /books/import (Single PDF Upload Studio)
+        +--> Content Factory & CMS API (/v1/books, /v1/quality, /v1/issues...)
 ```
 
 Supabase is the **brain**, Google Drive is the **warehouse**, the Python worker is the **factory**, and the React Native app is the **learning client**.

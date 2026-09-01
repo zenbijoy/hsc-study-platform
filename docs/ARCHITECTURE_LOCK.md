@@ -71,3 +71,14 @@
 3. **FlashList Virtualization**: All long lists (books, chapters, formula vaults, CQ banks) must use `@shopify/flash-list` with stable keys and memoized cell layout.
 4. **Accessible Touch Targets**: Buttons, icon controls, and pressable cards must satisfy a minimum `44×44 pt` touch hitbox.
 5. **Reduced Motion Respect**: Animated transitions and spring scales must check `useReducedMotionPreference()` and degrade gracefully to simple fades when enabled.
+
+---
+
+## 4. CMS, Versioning & Publishing Architecture Contract (Phase 16)
+
+1. **Published BookVersion Source Immutability**: Active published PDF sources are immutable. Changes to the underlying PDF require creating a new `BookVersion`. Never mutate an active published version's source file in place.
+2. **Manual Metadata & Chapter Override Locking**: When an admin manually edits a field or chapter boundary, the system marks `source=ADMIN_OVERRIDE` and `locked=true`. Future automated reprocessing pipelines MUST NOT silently overwrite these fields.
+3. **Non-Destructive Chapter Revisions**: Editing chapter boundaries creates versioned revisions in `book_chapter_revisions` without destroying historical or draft mappings.
+4. **Artifact Candidate Promotion**: Secure packages (HSCP) and search packs (FTS5) must follow `Candidate → Validate → Promote → Retain Previous`. Never activate an artifact before server-side integrity validation succeeds.
+5. **Strict Student vs Admin API Boundary**: Student view models must never receive draft books, unverified rights content, internal administrative notes, or rights evidence documents.
+6. **Zero-Downtime Atomic Rollback**: Version and chapter map rollbacks switch active database pointers atomically without requiring slow artifact re-encryption.

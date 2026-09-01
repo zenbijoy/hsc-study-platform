@@ -196,4 +196,11 @@ Production extension points:
 - teacher moderation workflows and advanced semantic search/embeddings
 - Play Integrity / App Attest integration
 
-Read `docs/ARCHITECTURE.md` and `docs/SECURITY.md` before production deployment.
+Read the production operations guides before public deployment:
+- [Production Deployment Guide](docs/PRODUCTION_DEPLOYMENT.md)
+- [Admin Content Management Guide](docs/ADMIN_CONTENT_MANAGEMENT.md)
+- [Pre-Launch Release Checklist](docs/RELEASE_CHECKLIST.md)
+- [Environment Configuration Reference](docs/ENVIRONMENT_CONFIGURATION.md)
+- [Backup and Disaster Recovery](docs/BACKUP_AND_RECOVERY.md)
+- [Production Security Checklist](docs/PRODUCTION_SECURITY_CHECKLIST.md)
+- [Daily Admin Workflow](docs/DAILY_ADMIN_WORKFLOW.md)
