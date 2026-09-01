@@ -1,0 +1,3 @@
+{"type":"cq","subject":"physics","paper":1,"chapter":"motion","question":"A car starts from rest and reaches 20 m/s in 5 s. Find the acceleration.","answer":"4 m/s^2","difficulty":2,"confidence":0.99,"source":"demo"}
+{"type":"formula","subject":"physics","paper":1,"chapter":"motion","title":"First equation of motion","latex":"v=u+at","importance":5,"confidence":0.99,"source":"demo"}
+{"type":"mcq","subject":"physics","paper":1,"chapter":"motion","question":"Which quantity is a vector?","options":["speed","distance","velocity","time"],"answer":"velocity","difficulty":1,"confidence":0.99,"source":"demo"}

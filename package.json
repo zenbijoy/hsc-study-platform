@@ -1,0 +1,19 @@
+{
+  "name": "hsc-study-platform",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/mobile",
+    "apps/admin"
+  ],
+  "scripts": {
+    "mobile": "npm --workspace apps/mobile run start",
+    "mobile:android": "npm --workspace apps/mobile run android",
+    "admin": "npm --workspace apps/admin run dev",
+    "typecheck": "npm --workspace apps/mobile run typecheck && npm --workspace apps/admin run typecheck",
+    "doctor": "node scripts/doctor.mjs"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}

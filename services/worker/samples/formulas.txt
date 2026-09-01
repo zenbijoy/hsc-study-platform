@@ -1,0 +1,22 @@
+@subject Physics
+@paper 1
+@chapter Motion
+
+::formula
+title: First equation of motion
+formula: v=u+at
+importance: 5
+tags: motion, velocity, board
+
+::formula
+title: Second equation of motion
+formula: s=ut+1/2at^2
+importance: 5
+tags: motion, displacement
+
+::cq
+title: Board-style kinematics problem
+question: A body starts from rest and moves with uniform acceleration. Derive the relation between final velocity, acceleration and displacement.
+board: Demo
+year: 2026
+difficulty: 3

@@ -1,0 +1,52 @@
+{
+  "name": "@hsc/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@expo/vector-icons": "latest",
+    "@noble/ciphers": "latest",
+    "@noble/curves": "latest",
+    "@noble/hashes": "latest",
+    "@shopify/flash-list": "latest",
+    "@supabase/supabase-js": "latest",
+    "@tanstack/react-query": "latest",
+    "base64-js": "latest",
+    "expo": "~57.0.17",
+    "expo-blur": "latest",
+    "expo-crypto": "latest",
+    "expo-dev-client": "latest",
+    "expo-file-system": "latest",
+    "expo-haptics": "latest",
+    "expo-linear-gradient": "latest",
+    "expo-router": "latest",
+    "expo-screen-capture": "latest",
+    "expo-secure-store": "latest",
+    "expo-status-bar": "latest",
+    "moti": "latest",
+    "nativewind": "latest",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-gesture-handler": "latest",
+    "react-native-pdf": "latest",
+    "react-native-reanimated": "latest",
+    "react-native-safe-area-context": "latest",
+    "react-native-svg": "latest",
+    "react-native-url-polyfill": "latest",
+    "zustand": "latest",
+    "react-native-blob-util": "latest",
+    "expo-sqlite": "latest"
+  },
+  "devDependencies": {
+    "@types/react": "latest",
+    "tailwindcss": "^3.4.17",
+    "typescript": "latest"
+  }
+}

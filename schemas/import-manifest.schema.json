@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "HSC Import Manifest",
+  "type": "object",
+  "required": ["schemaVersion", "collection", "content"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "collection": { "type": "string" },
+    "subject": { "type": "string" },
+    "paper": { "type": "integer" },
+    "source": { "type": "string" },
+    "content": {
+      "type": "array",
+      "items": { "$ref": "content-item.schema.json" }
+    }
+  }
+}

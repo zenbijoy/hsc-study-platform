@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "HSC Study",
+    "slug": "hsc-study",
+    "scheme": "hscstudy",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "android": {
+      "package": "com.example.hscstudy",
+      "allowBackup": false,
+      "permissions": []
+    },
+    "ios": {
+      "bundleIdentifier": "com.example.hscstudy",
+      "supportsTablet": true
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-file-system",
+        {
+          "enableFileSharing": false
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

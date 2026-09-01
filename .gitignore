@@ -1,0 +1,17 @@
+node_modules/
+.next/
+.expo/
+dist/
+build/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+__pycache__/
+.pytest_cache/
+.venv/
+var/
+coverage/
+apps/mobile/android/
+apps/mobile/ios/

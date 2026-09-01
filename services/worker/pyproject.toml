@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hsc-content-factory"
+version = "0.1.0"
+description = "Secure HSC content ingestion, normalization, packaging and Drive publishing worker"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.116",
+  "uvicorn[standard]>=0.35",
+  "python-multipart>=0.0.20",
+  "pydantic>=2.11",
+  "pydantic-settings>=2.10",
+  "PyMuPDF>=1.26",
+  "cryptography>=45",
+  "rapidfuzz>=3.14",
+  "zstandard>=0.24",
+  "google-api-python-client>=2.180",
+  "google-auth>=2.40",
+  "google-auth-oauthlib>=1.2",
+  "supabase>=2.18",
+  "httpx>=0.28",
+  "boto3>=1.40"
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.4", "ruff>=0.12"]
+
+[project.scripts]
+hsc-worker = "app.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110

@@ -1,0 +1,25 @@
+services:
+  worker:
+    build: ./services/worker
+    ports:
+      - "8787:8787"
+    env_file:
+      - ./services/worker/.env
+    volumes:
+      - hsc_worker_data:/data
+    restart: unless-stopped
+
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_INGEST_API_URL: http://localhost:8787
+    depends_on:
+      - worker
+    restart: unless-stopped
+
+volumes:
+  hsc_worker_data:
